@@ -7,9 +7,11 @@
         <version>2.33</version>
         <relativePath />
     </parent>
+
     <artifactId>tmpdir-jenkins-plugin</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>hpi</packaging>
+
     <properties>
         <!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
         <jenkins.version>2.60.3</jenkins.version>
@@ -21,16 +23,21 @@
           ~ stapler-plugin.version: The Stapler Maven plugin version required by the plugin.
      -->
     </properties>
-    <name>TODO Plugin</name>
-    <description>TODO</description>
-    <url>https://wiki.jenkins-ci.org/display/JENKINS/TODO+Plugin</url>
+
+    <name>TMPDIR Plugin</name>
+    <description>
+        Creates a private temporary directory ("TMPDIR") for each build and optionally deletes it when the
+        build is done.
+    </description>
+    <url>https://wiki.jenkins-ci.org/display/JENKINS/TMPDIR+Plugin</url>
     <!-- The default licence for Jenkins OSS Plugins is MIT. Substitute for the applicable one if needed. -->
     <licenses>
         <license>
-            <name>MIT License</name>
-            <url>http://opensource.org/licenses/MIT</url>
+            <name>Apache License, Version 2.0</name>
+            <url>https://opensource.org/licenses/Apache-2.0</url>
         </license>
     </licenses>
+
     <dependencies>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
@@ -97,6 +104,7 @@
         <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
     </scm>
     -->
+
     <repositories>
         <repository>
             <id>repo.jenkins-ci.org</id>
