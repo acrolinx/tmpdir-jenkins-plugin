@@ -82,9 +82,11 @@ public class TmpdirBuildWrapper extends BuildWrapper {
 
     private class TmpdirEnvironment extends BuildWrapper.Environment {
         private final String tmpdir;
+        private final FilePath tmpdirPath;
 
-        public TmpdirEnvironment(String tmpdir) {
+        public TmpdirEnvironment(String tmpdir, FilePath tmpdirPath) {
             this.tmpdir = tmpdir;
+            this.tmpdirPath = tmpdirPath;
         }
 
         @Override
@@ -144,6 +146,6 @@ public class TmpdirBuildWrapper extends BuildWrapper {
             tmpdir = tmpdirPath.getRemote();
         }
 
-        return new TmpdirEnvironment(tmpdir);
+        return new TmpdirEnvironment(tmpdir, tmpdirPath);
     }
 }
