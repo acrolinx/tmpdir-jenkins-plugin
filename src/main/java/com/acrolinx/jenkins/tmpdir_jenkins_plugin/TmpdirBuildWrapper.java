@@ -54,7 +54,7 @@ public class TmpdirBuildWrapper extends BuildWrapper {
         }
 
         public FormValidation doCheckTmpdirPluginDirTemplate(@QueryParameter String value) {
-            if (value.trim().isEmpty()) {
+            if (value.isEmpty()) {
                 return FormValidation.error(Messages.tmpdir_buildwrapper_error_emptyValue());
             }
 
