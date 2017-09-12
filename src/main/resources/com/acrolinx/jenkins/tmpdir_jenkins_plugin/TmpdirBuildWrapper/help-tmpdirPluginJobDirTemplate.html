@@ -1,0 +1,16 @@
+<div>
+    <p>
+        Path template to use when creating a TMPDIR for this job. Overrides the global TMPDIR path template
+        specified in the global Jenkins settings.
+    </p>
+    <p>
+        May contain the usual Jenkins environment/build variables. If relative, then it is
+        made absolute by prepending the value of the <code>java.io.tmpdir</code> Java system property
+        on the node that is used to execute a particular build.
+    </p>
+    <p>
+        For example, <code>${BUILD_TAG}-tmp</code> may end up being something like
+        <code>/var/tmp/foobar-123-tmp</code> if <code>java.io.tmpdir</code> on the
+        node is set to <code>/var/tmp/</code>.
+    </p>
+</div>
