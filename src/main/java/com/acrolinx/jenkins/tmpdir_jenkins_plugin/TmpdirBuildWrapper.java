@@ -36,15 +36,42 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Map;
 
+
+/**
+ * Build wrapper that creates a TMPDIR before the build and deletes it afterwards.
+ */
 public class TmpdirBuildWrapper extends BuildWrapper {
     @Extension
     public static class DescriptorImpl extends BuildWrapperDescriptor {
+        /**
+         * Default, global template for the TMPDIR path.
+         *
+         * @see #getTmpdirPluginDirTemplate()
+         */
         private String globalDirTemplate = "${BUILD_TAG}-tmp";
 
+        /**
+         * Retrieves the default TMPDIR path template.
+         *
+         * This is used when a job does not provide its own template.
+         *
+         * May contain the usual Jenkins environment/build variables. If relative, then it is
+         * made absolute by prepending the value of the <code>java.io.tmpdir</code> property
+         * on the node that is used to execute a particular build.
+         *
+         * @see #globalDirTemplate
+         * @return Default TMPDIR path template.
+         */
         public String getTmpdirPluginDirTemplate() {
             return globalDirTemplate;
         }
 
+        /**
+         * Used to process parameters for this plugin that are configured on the global
+         * "Configure System" page.
+         *
+         * @see BuildWrapperDescriptor#configure(StaplerRequest, JSONObject)
+         */
         @Override
         public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
             this.globalDirTemplate = json.getString("tmpdirPluginDirTemplate");
@@ -53,6 +80,15 @@ public class TmpdirBuildWrapper extends BuildWrapper {
             return super.configure(req, json);
         }
 
+        /**
+         * Performs form validation for the default TMPDIR path template configuration parameter on the global
+         * "Configure System" page.
+         *
+         * This currently simply checks if the parameter is empty.
+         *
+         * @param value Value for the TMPDIR path template, as entered by user.
+         * @return Form validation result.
+         */
         public FormValidation doCheckTmpdirPluginDirTemplate(@QueryParameter String value) {
             if (value.isEmpty()) {
                 return FormValidation.error(Messages.tmpdir_buildwrapper_error_emptyValue());
@@ -61,11 +97,24 @@ public class TmpdirBuildWrapper extends BuildWrapper {
             return FormValidation.ok();
         }
 
+        /**
+         * Returns whether this wrapper can be used for a certain project.
+         *
+         * Currently, this wrapper can be used for all projects.
+         *
+         * @param item Project to check.
+         * @return Whether this wrapper can be used for this project.
+         */
         @Override
         public boolean isApplicable(AbstractProject<?, ?> item) {
             return true;
         }
 
+        /**
+         * Returns the display name for this build wrapper.
+         *
+         * @return Display name for this build wrapper.
+         */
         @Nonnull
         @Override
         public String getDisplayName() {
@@ -73,6 +122,12 @@ public class TmpdirBuildWrapper extends BuildWrapper {
         }
     }
 
+    /**
+     * Returns value of system property <code>java.io.tmpdir</code> on a Jenkins slave.
+     *
+     * Run this on a slave by using a {@link hudson.remoting.VirtualChannel} obtained from e. g.
+     * a {@link hudson.Launcher}.
+     */
     private static class GetDefaultSlaveTmpdirCallable extends MasterToSlaveCallable<String, IOException> {
         @Override
         public String call() throws IOException {
@@ -80,15 +135,42 @@ public class TmpdirBuildWrapper extends BuildWrapper {
         }
     }
 
+    /**
+     * The main environment for the TMPDIR build wrapper.
+     *
+     * This environment actually creates and deletes the TMPDIR.
+     */
     private class TmpdirEnvironment extends BuildWrapper.Environment {
+        /**
+         * Path to the TMPDIR for this build.
+         *
+         * @see #tmpdirPath
+         */
         private final String tmpdir;
+
+        /**
+         * Path to the TMPDIR for this build.
+         *
+         * @see #tmpdir
+         */
         private final FilePath tmpdirPath;
 
+        /**
+         * Creates a new TMPDIR environment.
+         *
+         * @param tmpdir Path to the TMPDIR that should be managed.
+         * @param tmpdirPath Just like <code>tmpdir</code>, but as a {@link hudson.FilePath}.
+         */
         public TmpdirEnvironment(String tmpdir, FilePath tmpdirPath) {
             this.tmpdir = tmpdir;
             this.tmpdirPath = tmpdirPath;
         }
 
+        /**
+         * Injects the <code>TEMP</code> and <code>TMPDIR</code> variables into the build environment.
+         *
+         * @param env Amended environment variables (i. e. containing <code>TEMP</code> and <code>TMPDIR</code>).
+         */
         @Override
         public void buildEnvVars(Map<String, String> env) {
             // Windows
@@ -100,23 +182,62 @@ public class TmpdirBuildWrapper extends BuildWrapper {
     }
 
 
+    /**
+     * Job-specific TMPDIR template.
+     *
+     * Overrides and behaves exactly like {@link DescriptorImpl#globalDirTemplate}.
+     */
     private final String jobDirTemplate;
+
+    /**
+     * If <code>true</code>, then the contents of the TMPDIR will be logged before it is deleted.
+     */
     private final Boolean logDirContents;
 
+    /**
+     * Creates a new build wrapper instance.
+     *
+     * @param tmpdirPluginJobDirTemplate TMPDIR path template configured for this job. See
+     *                                   {@link #getTmpdirPluginJobDirTemplate()}.
+     * @param tmpdirPluginLogDirContents Whether to log the contents of the TMPDIR before it gets deleted. See
+     *                                   {@link #isTmpdirPluginLogDirContents()}.
+     */
     @DataBoundConstructor
     public TmpdirBuildWrapper(String tmpdirPluginJobDirTemplate, Boolean tmpdirPluginLogDirContents) {
         this.jobDirTemplate = tmpdirPluginJobDirTemplate;
         this.logDirContents = tmpdirPluginLogDirContents;
     }
 
+    /**
+     * Returns the TMPDIR path template configured for this job.
+     *
+     * This overrides the {@link DescriptorImpl#getTmpdirPluginDirTemplate() global template}.
+     *
+     * @return <code>null</code> if no template is configured for this job, the template otherwise.
+     */
     public String getTmpdirPluginJobDirTemplate() {
         return this.jobDirTemplate;
     }
 
+    /**
+     * Returns whether the contents of the TMPDIR should be logged before it is deleted.
+     *
+     * @return Whether the contents of the TMPDIR should be logged before it is deleted.
+     */
     public boolean isTmpdirPluginLogDirContents() {
         return this.logDirContents;
     }
 
+    /**
+     * Returns the effective TMPDIR template for this job.
+     *
+     * This returns the job-specific template, if set, and the global (default) template otherwise.
+     *
+     * Variables are <b>not replaced</b> in the returned value! Use {@link hudson.EnvVars#expand(String)} with the
+     * returned <code>String</code> to do that.
+     *
+     * @return Effective TMPDIR template, with all variables intact.
+     */
     public String getActualDirTemplate() {
         String jobTemplate = this.jobDirTemplate;
 
@@ -127,6 +248,18 @@ public class TmpdirBuildWrapper extends BuildWrapper {
         return ((DescriptorImpl) this.getDescriptor()).getTmpdirPluginDirTemplate();
     }
 
+    /**
+     * Creates the environment used for this build wrapper.
+     *
+     * This creates a {@link TmpdirEnvironment} which creates the TMPDIR and removes it after the build.
+     *
+     * @param build Current build.
+     * @param launcher Launcher for the current slave.
+     * @param listener Listener for the current build.
+     * @return Environment used for this build wrapper.
+     * @throws IOException On I/O errors.
+     * @throws InterruptedException When the thread is interrupted.
+     */
     @Override
     public Environment setUp(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException,
         InterruptedException {
