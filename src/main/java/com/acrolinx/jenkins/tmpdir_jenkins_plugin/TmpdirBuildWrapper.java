@@ -191,6 +191,7 @@ public class TmpdirBuildWrapper extends BuildWrapper {
         @Override
         public void buildEnvVars(Map<String, String> env) {
             // Windows
+            env.put("TMP", this.tmpdir);
             env.put("TEMP", this.tmpdir);
 
             // UNIX/Linux
