@@ -1,0 +1,15 @@
+<div>
+    <p>
+        Creates a private temporary directory before each build and deletes it afterwards in order to keep the
+        system-wide temporary directory tidy.
+    </p>
+    <p>
+        The environment variables <code>TMP</code>, <code>TEMP</code> and <code>TMPDIR</code> are also exported so
+        that all sane utilities should automatically use this temporary directory.
+    </p>
+    <p>
+        Java is not one of those sane applications (at least on UNIX/Linux), so the Java system property
+        <code>java.io.tmpdir</code> is set using the environment variable <code>JAVA_TOOL_OPTIONS</code>. Should
+        this variable already be set, then this property is appended to the existing value of that variable.
+    </p>
+</div>

@@ -196,6 +196,11 @@ public class TmpdirBuildWrapper extends BuildWrapper {
 
             // UNIX/Linux
             env.put("TMPDIR", this.tmpdir);
+
+            // Java
+            String javaOptions = env.getOrDefault("JAVA_TOOL_OPTIONS", "");
+            javaOptions += String.format(" -Djava.io.tmpdir=\"%s\"", this.tmpdir);
+            env.put("JAVA_TOOL_OPTIONS", javaOptions.trim());
         }
 
         @Override
@@ -352,8 +357,8 @@ public class TmpdirBuildWrapper extends BuildWrapper {
         }
 
         listener.getLogger().format("[TMPDIR] Creating temporary directory: %s%n", tmpdir);
-
         tmpdirPath.mkdirs();
+
         // TODO: What about Windows/NTFS permissions?
         tmpdirPath.chmod(0700);
 
