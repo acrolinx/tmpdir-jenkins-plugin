@@ -234,14 +234,16 @@ public class TmpdirBuildWrapper extends BuildWrapper {
                 while (!stack.isEmpty()) {
                     FilePath filePath = stack.pop();
                     String filePathStr = filePath.getRemote();
+                    boolean isDirectory = filePath.isDirectory();
 
                     logger.format(
                         (Locale) null,
-                        "[TMPDIR]  %12d B  %s%s\n",
-                        filePath.isDirectory() ? 0 : filePath.length(),
+                        "[TMPDIR]  %s  %10d B  %s%s\n",
+                        isDirectory ? "DIR" : "   ",
+                        isDirectory ? 0 : filePath.length(),
                         // Make the path relative to the TMPDIR:
                         filePathStr.substring(Math.min(tmpdirPathLen + 1, filePathStr.length())),
-                        filePath.isDirectory() ? "/" : ""
+                        isDirectory ? "/" : ""
                     );
 
                     // Process the children of this path, if any:
