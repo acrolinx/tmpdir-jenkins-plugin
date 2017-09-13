@@ -34,7 +34,8 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.Map;
+import java.io.PrintStream;
+import java.util.*;
 
 
 /**
@@ -136,6 +137,22 @@ public class TmpdirBuildWrapper extends BuildWrapper {
     }
 
     /**
+     * Non-recursively retrieves a sorted list of files and directories in a given directory.
+     *
+     * @param directory Directory whose children should be returned.
+     * @return Sorted list of files/directories in the given directory. List is sorted by the absolute path of each
+     * file, in ascending order.
+     * @throws IOException          On I/O errors.
+     * @throws InterruptedException When the thread is interrupted.
+     */
+    private static List<FilePath> getSortedDirectoryContents(FilePath directory)
+        throws IOException, InterruptedException {
+        List<FilePath> children = directory.list();
+        children.sort(Comparator.comparing(FilePath::getRemote));
+        return children;
+    }
+
+    /**
      * The main environment for the TMPDIR build wrapper.
      *
      * This environment actually creates and deletes the TMPDIR.
@@ -156,14 +173,23 @@ public class TmpdirBuildWrapper extends BuildWrapper {
         private final FilePath tmpdirPath;
 
         /**
+         * Listener for the current build.
+         * <p>
+         * Used for logging.
+         */
+        private final BuildListener buildListener;
+
+        /**
          * Creates a new TMPDIR environment.
          *
          * @param tmpdir Path to the TMPDIR that should be managed.
          * @param tmpdirPath Just like <code>tmpdir</code>, but as a {@link hudson.FilePath}.
+         * @param buildListener Listener for the current build.
          */
-        public TmpdirEnvironment(String tmpdir, FilePath tmpdirPath) {
+        public TmpdirEnvironment(String tmpdir, FilePath tmpdirPath, BuildListener buildListener) {
             this.tmpdir = tmpdir;
             this.tmpdirPath = tmpdirPath;
+            this.buildListener = buildListener;
         }
 
         /**
@@ -178,6 +204,57 @@ public class TmpdirBuildWrapper extends BuildWrapper {
 
             // UNIX/Linux
             env.put("TMPDIR", this.tmpdir);
+
+            this.buildListener.getLogger().println("[TMPDIR] Injected environment variables TEMP and TMPDIR.");
+        }
+
+        @Override
+        public boolean tearDown(AbstractBuild build, BuildListener listener) throws IOException, InterruptedException {
+            PrintStream logger = listener.getLogger();
+
+            // Do we need to do anything?
+            if (!this.tmpdirPath.exists()) {
+                logger.format(
+                    "[TMPDIR] Directory %s already deleted during build, nothing to do.\n",
+                    this.tmpdir
+                );
+                return true;
+            }
+
+            // Should we log the directory contents before deleting the directory?
+            if (logDirContents) {
+                logger.format("[TMPDIR] ----- Listing leftover files in directory %s -----\n", this.tmpdir);
+
+                int tmpdirPathLen = this.tmpdir.length();
+                LinkedList<FilePath> stack = new LinkedList<>();
+
+                // Initialize the file stack:
+                stack.addAll(0, getSortedDirectoryContents(this.tmpdirPath));
+
+                while (!stack.isEmpty()) {
+                    FilePath filePath = stack.pop();
+                    String filePathStr = filePath.getRemote();
+
+                    logger.format(
+                        (Locale) null,
+                        "[TMPDIR]  %12d B  %s%s\n",
+                        filePath.isDirectory() ? 0 : filePath.length(),
+                        // Make the path relative to the TMPDIR:
+                        filePathStr.substring(Math.min(tmpdirPathLen + 1, filePathStr.length())),
+                        filePath.isDirectory() ? "/" : ""
+                    );
+
+                    // Process the children of this path, if any:
+                    stack.addAll(0, getSortedDirectoryContents(filePath));
+                }
+
+                logger.println("[TMPDIR] --------------------------------");
+            }
+
+            // Now delete the directory!
+            logger.format("[TMPDIR] Deleting directory: %s\n", this.tmpdir);
+            this.tmpdirPath.deleteRecursive();
+            return true;
         }
     }
 
@@ -265,8 +342,11 @@ public class TmpdirBuildWrapper extends BuildWrapper {
         InterruptedException {
         VirtualChannel launcherChannel = launcher.getChannel();
 
-        String tmpdir = build.getEnvironment(listener).expand(this.getActualDirTemplate());
-        FilePath tmpdirPath = new FilePath(launcherChannel, tmpdir);
+        String specifiedTmpdir = build.getEnvironment(listener).expand(this.getActualDirTemplate());
+        FilePath tmpdirPath = new FilePath(launcherChannel, specifiedTmpdir);
+
+        // We do this so that the path we get is normalized, i. e. has no trailing slashes etc.
+        String tmpdir = tmpdirPath.getRemote();
 
         if (tmpdirPath.getParent() == null) {
             // Relative path? Make it absolute by prepending the global TMPDIR.
@@ -279,6 +359,12 @@ public class TmpdirBuildWrapper extends BuildWrapper {
             tmpdir = tmpdirPath.getRemote();
         }
 
-        return new TmpdirEnvironment(tmpdir, tmpdirPath);
+        listener.getLogger().format("[TMPDIR] Creating temporary directory: %s\n", tmpdir);
+
+        tmpdirPath.mkdirs();
+        // TODO: What about Windows/NTFS permissions?
+        tmpdirPath.chmod(0700);
+
+        return new TmpdirEnvironment(tmpdir, tmpdirPath, listener);
     }
 }
