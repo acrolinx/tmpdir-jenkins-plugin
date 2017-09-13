@@ -173,23 +173,14 @@ public class TmpdirBuildWrapper extends BuildWrapper {
         private final FilePath tmpdirPath;
 
         /**
-         * Listener for the current build.
-         * <p>
-         * Used for logging.
-         */
-        private final BuildListener buildListener;
-
-        /**
          * Creates a new TMPDIR environment.
          *
          * @param tmpdir Path to the TMPDIR that should be managed.
          * @param tmpdirPath Just like <code>tmpdir</code>, but as a {@link hudson.FilePath}.
-         * @param buildListener Listener for the current build.
          */
-        public TmpdirEnvironment(String tmpdir, FilePath tmpdirPath, BuildListener buildListener) {
+        public TmpdirEnvironment(String tmpdir, FilePath tmpdirPath) {
             this.tmpdir = tmpdir;
             this.tmpdirPath = tmpdirPath;
-            this.buildListener = buildListener;
         }
 
         /**
@@ -204,8 +195,6 @@ public class TmpdirBuildWrapper extends BuildWrapper {
 
             // UNIX/Linux
             env.put("TMPDIR", this.tmpdir);
-
-            this.buildListener.getLogger().println("[TMPDIR] Injected environment variables TEMP and TMPDIR.");
         }
 
         @Override
@@ -367,6 +356,6 @@ public class TmpdirBuildWrapper extends BuildWrapper {
         // TODO: What about Windows/NTFS permissions?
         tmpdirPath.chmod(0700);
 
-        return new TmpdirEnvironment(tmpdir, tmpdirPath, listener);
+        return new TmpdirEnvironment(tmpdir, tmpdirPath);
     }
 }
