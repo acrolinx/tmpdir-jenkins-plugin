@@ -249,8 +249,13 @@ public class TmpdirBuildWrapper extends BuildWrapper {
             }
 
             // Now delete the directory!
-            logger.format("[TMPDIR] Deleting directory: %s%n", this.tmpdir);
-            this.tmpdirPath.deleteRecursive();
+            if (preventDeletion) {
+                logger.format("[TMPDIR] Not deleting directory %s, as requested.%n", this.tmpdir);
+            } else {
+                logger.format("[TMPDIR] Deleting directory: %s%n", this.tmpdir);
+                this.tmpdirPath.deleteRecursive();
+            }
+
             return true;
         }
     }
@@ -269,17 +274,27 @@ public class TmpdirBuildWrapper extends BuildWrapper {
     private final Boolean logDirContents;
 
     /**
+     * If <code>true</code>, then the TMPDIR will not be deleted.
+     *
+     * This may be useful for debugging.
+     */
+    private final boolean preventDeletion;
+
+    /**
      * Creates a new build wrapper instance.
      *
      * @param tmpdirPluginJobDirTemplate TMPDIR path template configured for this job. See
      *                                   {@link #getTmpdirPluginJobDirTemplate()}.
      * @param tmpdirPluginLogDirContents Whether to log the contents of the TMPDIR before it gets deleted. See
      *                                   {@link #isTmpdirPluginLogDirContents()}.
+     * @param tmpdirPluginPreventDeletion Whether to keep the TMPDIR around after the build, for debugging. See
+     *                                    {@link #isTmpdirPluginPreventDeletion()}.
      */
     @DataBoundConstructor
-    public TmpdirBuildWrapper(String tmpdirPluginJobDirTemplate, Boolean tmpdirPluginLogDirContents) {
+    public TmpdirBuildWrapper(String tmpdirPluginJobDirTemplate, Boolean tmpdirPluginLogDirContents, boolean tmpdirPluginPreventDeletion) {
         this.jobDirTemplate = tmpdirPluginJobDirTemplate;
         this.logDirContents = tmpdirPluginLogDirContents;
+        this.preventDeletion = tmpdirPluginPreventDeletion;
     }
 
     /**
@@ -300,6 +315,15 @@ public class TmpdirBuildWrapper extends BuildWrapper {
      */
     public boolean isTmpdirPluginLogDirContents() {
         return this.logDirContents;
+    }
+
+    /**
+     * Returns whether the TMPDIR should be kept around after the build.
+     *
+     * @return Whether the TMPDIR should be kept around after the build (i. e. if it should <b>not</b> be deleted).
+     */
+    public boolean isTmpdirPluginPreventDeletion() {
+        return this.preventDeletion;
     }
 
     /**

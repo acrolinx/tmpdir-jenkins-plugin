@@ -25,5 +25,8 @@ limitations under the License.
 				 description="${%logContentsDesc}">
 			<f:checkbox default="true"/>
 		</f:entry>
+		<f:entry title="${%preventDeletion}" field="tmpdirPluginPreventDeletion">
+			<f:checkbox />
+		</f:entry>
 	</f:advanced>
 </j:jelly>
