@@ -215,7 +215,7 @@ public class TmpdirBuildWrapper extends BuildWrapper {
             // Do we need to do anything?
             if (!this.tmpdirPath.exists()) {
                 logger.format(
-                    "[TMPDIR] Directory %s already deleted during build, nothing to do.\n",
+                    "[TMPDIR] Directory %s already deleted during build, nothing to do.%n",
                     this.tmpdir
                 );
                 return true;
@@ -223,7 +223,7 @@ public class TmpdirBuildWrapper extends BuildWrapper {
 
             // Should we log the directory contents before deleting the directory?
             if (logDirContents) {
-                logger.format("[TMPDIR] ----- Listing leftover files in directory %s -----\n", this.tmpdir);
+                logger.format("[TMPDIR] ----- Listing leftover files in directory %s -----%n", this.tmpdir);
 
                 int tmpdirPathLen = this.tmpdir.length();
                 LinkedList<FilePath> stack = new LinkedList<>();
@@ -238,7 +238,7 @@ public class TmpdirBuildWrapper extends BuildWrapper {
 
                     logger.format(
                         (Locale) null,
-                        "[TMPDIR]  %s  %10d B  %s%s\n",
+                        "[TMPDIR]  %s  %10d B  %s%s%n",
                         isDirectory ? "DIR" : "   ",
                         isDirectory ? 0 : filePath.length(),
                         // Make the path relative to the TMPDIR:
@@ -254,7 +254,7 @@ public class TmpdirBuildWrapper extends BuildWrapper {
             }
 
             // Now delete the directory!
-            logger.format("[TMPDIR] Deleting directory: %s\n", this.tmpdir);
+            logger.format("[TMPDIR] Deleting directory: %s%n", this.tmpdir);
             this.tmpdirPath.deleteRecursive();
             return true;
         }
@@ -361,7 +361,7 @@ public class TmpdirBuildWrapper extends BuildWrapper {
             tmpdir = tmpdirPath.getRemote();
         }
 
-        listener.getLogger().format("[TMPDIR] Creating temporary directory: %s\n", tmpdir);
+        listener.getLogger().format("[TMPDIR] Creating temporary directory: %s%n", tmpdir);
 
         tmpdirPath.mkdirs();
         // TODO: What about Windows/NTFS permissions?
