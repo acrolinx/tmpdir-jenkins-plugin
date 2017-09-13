@@ -245,7 +245,7 @@ public class TmpdirBuildWrapper extends BuildWrapper {
                     stack.addAll(0, getSortedDirectoryContents(filePath));
                 }
 
-                logger.println("[TMPDIR] --------------------------------");
+                logger.println("[TMPDIR] ----- End of directory listing -----");
             }
 
             // Now delete the directory!
